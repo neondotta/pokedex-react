@@ -79,7 +79,7 @@ export function PokemonInfo() {
                 <p className="title">Peso:</p>{" "}
                 <p className="value">
                   {pokemonProfile?.weight
-                    ? Number(pokemonProfile.weight) / 100 + "kg"
+                    ? Number(pokemonProfile.weight) / 10 + "kg"
                     : "Sem info"}
                 </p>
               </div>
@@ -95,19 +95,49 @@ export function PokemonInfo() {
 
             <p className="subtitle">Tipo:</p>
             <div className="types">
-              {pokemonProfile.types.map((type) => {
+              {pokemonProfile.types.map((currentType) => {
                 return (
-                  <TypePokemonBlock key={type.name} type={type.name}>
-                    {type.name}
+                  <TypePokemonBlock key={currentType.name} type={currentType.name}>
+                    {currentType.name}
                   </TypePokemonBlock>
                 );
               })}
             </div>
+
+            { pokemonProfile.weakness && (
+              <>
+                <p className="subtitle">Fraqueza:</p>
+                <div className="types">
+                  {pokemonProfile.weakness.map((currentWeakness) => {
+                    return (
+                      <TypePokemonBlock key={currentWeakness.name} type={currentWeakness.name}>
+                        {currentWeakness.name}
+                      </TypePokemonBlock>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            { pokemonProfile.advantage && (
+              <>
+                <p className="subtitle">Vantagens:</p>
+                <div className="types">
+                  {pokemonProfile.advantage.map((currentAdvantage) => {
+                    return (
+                      <TypePokemonBlock key={currentAdvantage.name} type={currentAdvantage.name}>
+                        {currentAdvantage.name}
+                      </TypePokemonBlock>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         </PokemonResume>
 
         <div className="title-block">
-          Atributos do Pokémon: {pokemonProfile.name}
+          Atributos do {pokemonProfile.name}
         </div>
         <div className="row">
           <div className="chart-data">
@@ -119,7 +149,7 @@ export function PokemonInfo() {
           </div>
         </div>
 
-        { pokemonProfile.evolutions != undefined ? (
+        { pokemonProfile?.evolutions != undefined && (
             <>
 							<div className="title-block">Evoluções</div>
 							<div className="row">
@@ -128,7 +158,7 @@ export function PokemonInfo() {
 								})}
 							</div>
             </>
-        ) : ( <div>teste</div> )}
+        )}
       </PokemonInfoContainer>
     );
   } else {

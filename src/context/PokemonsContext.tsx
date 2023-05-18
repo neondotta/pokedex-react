@@ -3,6 +3,7 @@ import { ReactNode, useCallback, useEffect, useState } from "react";
 import { createContext } from "use-context-selector";
 
 interface Types {
+  url: string;
   name: string;
 }
 
@@ -41,6 +42,8 @@ interface Pokemon {
   number: string;
   name: string;
   types: Types[];
+  weakness?: Types[];
+  advantage?: Types[];
   attributes: Attributes[];
   images: Images;
   height: string;
@@ -55,11 +58,10 @@ interface PokemonsContextType {
   pokemonProfile?: Pokemon;
   nextUrl: string | null;
   fetchPokemons: (
-    url?: string,
-    limit?: string,
-    offset?: string
+    url?: string | null,
   ) => Promise<void>;
   fetchPokemon: (pokemonName: string) => void;
+  isLoading: boolean;
 }
 
 interface PokemonsProviderProps {
@@ -72,24 +74,15 @@ export function PokemonsContextProvider({ children }: PokemonsProviderProps) {
   const [pokemons, setPokemons] = useState<Pokemon[]>([]);
   const [nextUrl, setNextUrl] = useState<string | null>(null);
   const [pokemonProfile, setPokemonProfile] = useState<Pokemon | undefined>();
-  
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const fetchPokemons = useCallback(
-    async (url?: string, limit?: string, offset?: string) => {
-      const setUrl = url ? url : " https://pokeapi.co/api/v2/pokemon";
-
-      const params = {
-        limit: limit ? limit : 20,
-        offset: offset ? offset : 0,
-      };
-
-      const { data } = await axios.get(setUrl, { params });
-
-      let pokemonsDataUrl: Array<string> = [];
-
-      data.results.forEach(async function (currentPokemon: any) {
-        pokemonsDataUrl.push(currentPokemon.url);
-      });
+    async (url: string | null = null) => {
+      setIsLoading(true);
+      
+      const setUrl = url ? url : "https://pokeapi.co/api/v2/pokemon?offset=0&limit=200";
+      console.log('fetchPokemons', setUrl)
+      const { data } = await axios.get(setUrl);
 
       setNextUrl(data.next);
 
@@ -100,11 +93,12 @@ export function PokemonsContextProvider({ children }: PokemonsProviderProps) {
 
         const pokemons = response.map((pokemon) => normalizePokemon(pokemon));
 
-        setPokemons(pokemons);
+        setPokemons((state) => [ ...state, ...pokemons]);
       } catch (e) {
         console.error(e);
       } finally {
         console.log("Carregou");
+        //setIsLoading(false);
       }
     },
     []
@@ -112,7 +106,10 @@ export function PokemonsContextProvider({ children }: PokemonsProviderProps) {
 
   const normalizePokemon = ({ data }: any): Pokemon => {
     const types: Types[] = data.types?.map((type: any) => {
-      return { name: type.type.name };
+      return {
+        name: type.type.name,
+        url: type.type.url
+      };
     });
 
     let chartAttributesData: ChartAttributesData = {
@@ -138,7 +135,7 @@ export function PokemonsContextProvider({ children }: PokemonsProviderProps) {
         value: attribute.base_stat,
       };
     });
-    
+
     return {
       id: data.id,
       number: data.id.toString().padStart(3, "0"),
@@ -170,11 +167,23 @@ export function PokemonsContextProvider({ children }: PokemonsProviderProps) {
     });
 
     if (currentPokemonProfile) {
-      const responseEvolutionsPokemon = await getEvolutionPokemon(currentPokemonProfile);
+      const responseEvolutionsPokemon = await getEvolutionPokemon(
+        currentPokemonProfile
+      );
+
       currentPokemonProfile.evolutions = responseEvolutionsPokemon;
+      
+      if(currentPokemonProfile.types.length > 0) {
+        const responseWeaknessAndAdvantageType = await getWeaknessAndAdvantageType(
+          currentPokemonProfile
+        );
+
+        currentPokemonProfile.weakness = responseWeaknessAndAdvantageType.weakness;
+        currentPokemonProfile.advantage = responseWeaknessAndAdvantageType.advantage;
+      }
 
       setPokemonProfile(currentPokemonProfile);
-      
+
       return;
     }
 
@@ -187,40 +196,72 @@ export function PokemonsContextProvider({ children }: PokemonsProviderProps) {
     const responseEvolutionsPokemon = await getEvolutionPokemon(pokemonData);
     pokemonData.evolutions = responseEvolutionsPokemon;
     
+    if(pokemonData.types.length > 0) {
+      const responseWeaknessAndAdvantageType = await getWeaknessAndAdvantageType(
+        pokemonData
+      );
+
+      pokemonData.weakness = responseWeaknessAndAdvantageType.weakness;
+      pokemonData.advantage = responseWeaknessAndAdvantageType.advantage;
+    }
+
     setPokemonProfile(pokemonData);
   }, []);
 
   const getEvolutionPokemon = async (pokemonData: Pokemon) => {
-    const {data} = await axios.get(pokemonData.urlSpecies);
-    
+    const { data } = await axios.get(pokemonData.urlSpecies);
+
     const responseEvolutionsPokemon = await axios.get(data.evolution_chain.url);
-    
-    const evolutionsData = getEvolutionData([responseEvolutionsPokemon.data.chain]);
+
+    const evolutionsData = getEvolutionData([
+      responseEvolutionsPokemon.data.chain,
+    ]);
 
     return evolutionsData.map(function (item: any) {
-      const splitUrl = item.url.split('/')
-        .filter(function(data: string) { return data; });
+      const splitUrl = item.url.split("/").filter(function (data: string) {
+        return data;
+      });
 
       const getPokemonId = splitUrl[splitUrl.length - 1];
-      
+
       return {
         id: parseInt(getPokemonId),
         name: item.name,
-        url: "https://assets.pokemon.com/assets/cms2/img/pokedex/detail/" +
+        url:
+          "https://assets.pokemon.com/assets/cms2/img/pokedex/detail/" +
           getPokemonId.toString().padStart(3, "0") +
-          ".png"
-      }
+          ".png",
+      };
     });
-  }
+  };
 
   const getEvolutionData = (data: any) => {
-    return data.flatMap(item => {
-        if (item.evolves_to.length) {
-            return [item.species, ...getEvolutionData(item.evolves_to)];
-        }
+    return data.flatMap((item) => {
+      if (item.evolves_to.length) {
+        return [item.species, ...getEvolutionData(item.evolves_to)];
+      }
 
-        return item.species;
+      return item.species;
     });
+  };
+
+  const getWeaknessAndAdvantageType = async (pokemonData: Pokemon) => {
+    const promises = pokemonData.types.map((type: Types) => axios.get(type.url));
+
+    const response = await axios.all(promises);
+    
+    const double_damage_from = response.map(({ data }) => { return data.damage_relations.double_damage_from});
+    const weakness = [].concat(...double_damage_from);
+    const resultWeakness = weakness.filter((item, pos) => weakness.indexOf(item) === pos);
+
+    const double_damage_to = response.map(({ data }) => { return data.damage_relations.double_damage_to});
+    const advantages = [].concat(...double_damage_to);
+    const resultAdvantage = advantages.filter((item, pos) => advantages.indexOf(item) === pos);
+
+    return {
+      weakness: resultWeakness, 
+      advantage: resultAdvantage
+    };
   };
 
   useEffect(() => {
@@ -235,6 +276,7 @@ export function PokemonsContextProvider({ children }: PokemonsProviderProps) {
         fetchPokemon,
         fetchPokemons,
         pokemonProfile,
+        isLoading
       }}
     >
       {children}

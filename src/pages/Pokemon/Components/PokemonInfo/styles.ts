@@ -37,7 +37,7 @@ export const PokemonInfoContainer = styled.div<CardsPokemonProps>`
         background:${(props) => props.theme[props.type]};
         margin-top: 2rem;
         font-size: 2rem;
-        padding: 15px 5px;
+        padding: 15px;
         box-shadow: 0px 0px 3px 4px ${(props) => props.theme[props.type]};
         border-radius: 10px 10px 0 0;
     }
@@ -99,7 +99,7 @@ export const PokemonResume = styled.div<CardsPokemonProps>`
         }
 
         .number {
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             font-size: .9rem;
         }
 
@@ -116,27 +116,26 @@ export const PokemonResume = styled.div<CardsPokemonProps>`
 
                 .value {
                     color: ${(props) => props.theme['gray-600']};
-                    font-size: 1.75rem;
+                    font-size: 1.5rem;
                     font-weight: bold;
                 }
             }
         }
 
         .line-info {
-            padding: 20px 0;
+            padding: 10px 0;
         }
 
         .subtitle {
-            font-size: 1.75rem;
+            font-size: 1.25rem;
             font-weight: bold;
-            padding-bottom: 5px;
-            margin-bottom: 15px;
-            border-bottom: 1px solid ${(props) => props.theme['white']};
+            margin-bottom: 10px;
         }
 
         .types {
             display: flex;
             gap: 10px;
+            margin-bottom: 10px;
         }
     }
 `
