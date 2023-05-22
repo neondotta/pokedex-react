@@ -1,11 +1,11 @@
 import { useContextSelector } from "use-context-selector";
-import ReactLoading from 'react-loading';
 import { CardsContainer, ContainerButtonMorePokemon, ListPokemonsContainer, TypePokemonBlock } from "./styles";
 
 import PokeballSVG from '../../../../assets/pokeball.svg'
 
 import { PokemonsContext } from '../../../../context/PokemonsContext';
 import { NavLink } from "react-router-dom";
+import { Loader } from "../../../../components/Loader";
 
 export function ListPokemons() {
     const { pokemons, isLoading, fetchPokemons, nextUrl } = useContextSelector(
@@ -14,13 +14,12 @@ export function ListPokemons() {
             return context
         },
     )
-    
     return(
         <>
+            {isLoading && (
+                <Loader type='spinningBubbles' isLoading={isLoading} />
+            )}
             <ListPokemonsContainer>
-                {isLoading ?? (
-                    <ReactLoading type='spinningBubbles' color='#30a7d7' height={667} width={375} />
-                )}
                 {pokemons.map((pokemon) => {
                     return <CardsContainer type={pokemon.types[0].name} key={pokemon.id}>
                         <NavLink to={`/pokemon/${pokemon.name.toLowerCase()}`}>

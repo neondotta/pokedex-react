@@ -81,7 +81,7 @@ export function PokemonsContextProvider({ children }: PokemonsProviderProps) {
       setIsLoading(true);
       
       const setUrl = url ? url : "https://pokeapi.co/api/v2/pokemon?offset=0&limit=200";
-      console.log('fetchPokemons', setUrl)
+
       const { data } = await axios.get(setUrl);
 
       setNextUrl(data.next);
@@ -96,9 +96,10 @@ export function PokemonsContextProvider({ children }: PokemonsProviderProps) {
         setPokemons((state) => [ ...state, ...pokemons]);
       } catch (e) {
         console.error(e);
+        setIsLoading(false);
       } finally {
         console.log("Carregou");
-        //setIsLoading(false);
+        setIsLoading(false);
       }
     },
     []
@@ -162,6 +163,8 @@ export function PokemonsContextProvider({ children }: PokemonsProviderProps) {
   };
 
   const fetchPokemon = useCallback(async (name: string) => {
+    setIsLoading(true);
+
     let currentPokemonProfile = pokemons.find(function (pokemon) {
       return pokemon.name.toLowerCase() === name;
     });
@@ -184,6 +187,7 @@ export function PokemonsContextProvider({ children }: PokemonsProviderProps) {
 
       setPokemonProfile(currentPokemonProfile);
 
+      setIsLoading(false);
       return;
     }
 
@@ -205,6 +209,7 @@ export function PokemonsContextProvider({ children }: PokemonsProviderProps) {
       pokemonData.advantage = responseWeaknessAndAdvantageType.advantage;
     }
 
+    setIsLoading(false);
     setPokemonProfile(pokemonData);
   }, []);
 
@@ -236,7 +241,7 @@ export function PokemonsContextProvider({ children }: PokemonsProviderProps) {
   };
 
   const getEvolutionData = (data: any) => {
-    return data.flatMap((item) => {
+    return data.flatMap((item: any) => {
       if (item.evolves_to.length) {
         return [item.species, ...getEvolutionData(item.evolves_to)];
       }
@@ -266,7 +271,7 @@ export function PokemonsContextProvider({ children }: PokemonsProviderProps) {
 
   useEffect(() => {
     fetchPokemons();
-  }, []);
+  }, [fetchPokemons]);
 
   return (
     <PokemonsContext.Provider

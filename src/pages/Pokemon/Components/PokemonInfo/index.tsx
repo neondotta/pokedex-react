@@ -32,7 +32,7 @@ const optionsChart = {
   scale: {
     r: {
       min: 0,
-      max: 200,
+      max: 300,
     },
   },
   backgroundColor: "rgba(48,167,215,1)",

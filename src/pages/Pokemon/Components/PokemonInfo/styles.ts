@@ -95,7 +95,7 @@ export const PokemonResume = styled.div<CardsPokemonProps>`
         font-size: 1.25rem;
 
         .name {
-            font-size: 3rem;
+            font-size: 2.25rem;
         }
 
         .number {
