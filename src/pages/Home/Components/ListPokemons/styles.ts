@@ -133,3 +133,15 @@ export const ContainerButtonMorePokemon = styled.div`
     font-size: 1.25rem;
   }
 `
+export const ErrorMessage = styled.div`
+  max-width: 64rem;
+  padding: 20px;
+  background-color: red;
+  color: ${(props) => props.theme["white"]};
+  font-weight: bold;
+
+  display: flex;
+  justify-content: center;
+  margin: 30px auto;
+  border-radius: 8px;
+`

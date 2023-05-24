@@ -61,7 +61,12 @@ interface PokemonsContextType {
     url?: string | null,
   ) => Promise<void>;
   fetchPokemon: (pokemonName: string) => void;
+  searchPokemons: (data: SearchFormData) => void;
   isLoading: boolean;
+}
+
+interface SearchFormData {
+  name?: string;
 }
 
 interface PokemonsProviderProps {
@@ -82,28 +87,37 @@ export function PokemonsContextProvider({ children }: PokemonsProviderProps) {
       
       const setUrl = url ? url : "https://pokeapi.co/api/v2/pokemon?offset=0&limit=200";
 
+      if(!url) {
+        setPokemons([])
+      }
+
       const { data } = await axios.get(setUrl);
 
       setNextUrl(data.next);
 
-      try {
-        const promises = data.results.map(({ url }: any) => axios.get(url));
+      await fetchPokemonsData(data);
 
-        const response = await axios.all(promises);
-
-        const pokemons = response.map((pokemon) => normalizePokemon(pokemon));
-
-        setPokemons((state) => [ ...state, ...pokemons]);
-      } catch (e) {
-        console.error(e);
-        setIsLoading(false);
-      } finally {
-        console.log("Carregou");
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     },
     []
   );
+
+  const fetchPokemonsData = async (data: any) => {
+    try {
+      const promises = data.results.map(({ url }: any) => axios.get(url));
+
+      const response = await axios.all(promises);
+
+      const pokemons = response.map((pokemon) => normalizePokemon(pokemon));
+
+      setPokemons((state) => [ ...state, ...pokemons]);
+    } catch (e) {
+      console.error(e);
+      return false;
+    } finally {
+      return true;
+    }
+  }
 
   const normalizePokemon = ({ data }: any): Pokemon => {
     const types: Types[] = data.types?.map((type: any) => {
@@ -269,6 +283,29 @@ export function PokemonsContextProvider({ children }: PokemonsProviderProps) {
     };
   };
 
+  const searchPokemons = async (searchPokemon: SearchFormData) => {
+    setIsLoading(true);
+
+    setPokemons([]);
+
+    const filterName = searchPokemon.name?.toLowerCase().trim().replaceAll(' ', '-');
+    const url = `https://pokeapi.co/api/v2/pokemon/${filterName}`;
+
+    try {
+      const response = await axios.get(url);
+
+      const pokemon = normalizePokemon(response);
+
+      console.log('teaste', pokemon, url)
+
+      setPokemons([ pokemon ]);
+
+      setIsLoading(false);
+    } catch (e) {
+      setIsLoading(false);
+    }
+  }
+
   useEffect(() => {
     fetchPokemons();
   }, [fetchPokemons]);
@@ -280,6 +317,7 @@ export function PokemonsContextProvider({ children }: PokemonsProviderProps) {
         nextUrl,
         fetchPokemon,
         fetchPokemons,
+        searchPokemons,
         pokemonProfile,
         isLoading
       }}
